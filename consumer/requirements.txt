@@ -1,0 +1,4 @@
+kafka-python==2.3.3
+influxdb-client==1.50.0
+# kafka-python needs it to read batches compressed with snappy, which rpk produces by default.
+python-snappy==0.7.3

@@ -1,0 +1,17 @@
+# The ${...} values are read from the Grafana container's environment when it starts.
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    uid: influxdb
+    url: ${INFLUXDB_URL}
+    jsonData:
+      version: Flux
+      organization: ${INFLUXDB_ORG}
+      defaultBucket: ${INFLUXDB_BUCKET}
+    secureJsonData:
+      token: ${INFLUXDB_TOKEN}
+    editable: false
+    isDefault: true
