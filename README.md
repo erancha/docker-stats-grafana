@@ -74,4 +74,4 @@ Each script prints its full documentation with `--help`.
 
 ## License
 
-No license has been chosen yet; until a `LICENSE` file is added, all rights are reserved.
+Released under the MIT License. See [LICENSE](LICENSE).
