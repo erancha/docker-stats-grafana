@@ -2,13 +2,19 @@
 
 The detail behind the Architecture section of the [README](../README.md).
 
+**Contents:** [Parts](#parts) · [The message](#the-message) · [Stored data](#stored-data) ·
+[Delivery guarantee](#delivery-guarantee) · [Configuration](#configuration) ·
+[The dashboard](#the-dashboard) · [Codebase](#codebase)
+
 ```mermaid
 flowchart LR
-    subgraph hosts["Monitored hosts"]
-        P1["collect-stats.sh<br/>host A"]
-        P2["collect-stats.sh<br/>host B"]
+    subgraph hostA["Monitored host A"]
+        P1["collect-stats.sh"]
     end
-    subgraph stack["The stack (Docker Compose)"]
+    subgraph hostB["Monitored host B"]
+        P2["collect-stats.sh"]
+    end
+    subgraph stack["Dashboard host: the stack (Docker Compose)"]
         K[("Kafka broker<br/>local Redpanda or remote")]
         RC["Redpanda console"]
         C["kafka-to-influxdb<br/>consumer"]
@@ -28,17 +34,23 @@ flowchart LR
 - **Producer** (`scripts/collect-stats.sh`): runs on a monitored host. Every cycle it lists the
   running containers, leaves out those started less than 5 seconds ago (their figures are still
   zero or noise), takes one `docker stats` reading and publishes one message. It uses the first
-  Kafka client it finds on the host; the script's header lists them and their cost.
+  Kafka client it finds on the host; the script's header lists them and their cost. Hosts
+  publish to a broker rather than write to InfluxDB, so a host needs to reach the broker alone
+  and the broker holds messages while the consumer is down
+  ([ADR 0003](adr/0003-kafka-between-hosts-and-stack.md)).
 - **Broker**: any Kafka-compatible broker. `start.sh` runs a single-node Redpanda and its web
   console under the Compose profile `redpanda`; `--no-kafka` leaves them out for a broker that
-  runs elsewhere.
+  runs elsewhere. The stack runs in Docker Compose with every port on the loopback interface
+  ([ADR 0005](adr/0005-docker-compose-stack.md)).
 - **Consumer** (`consumer/`, service `kafka-to-influxdb`): reads up to two topics, converts each
   message and writes its points. `stats_message.py` holds the conversion and has no dependency
   outside the standard library; `consumer.py` holds the settings, the points and the loop.
-- **InfluxDB**: stores the points. The organization, the bucket and the token are created on the
-  first start from `.env`.
+- **InfluxDB**: stores the points, which are queried by time and never updated
+  ([ADR 0004](adr/0004-influxdb-for-the-figures.md)). The organization, the bucket and the token
+  are created on the first start from `.env`.
 - **Grafana**: reads its datasource and its dashboard from `grafana/provisioning/` and opens on
-  the dashboard.
+  the dashboard, so every deployment that loads these files shows the same dashboard
+  ([ADR 0006](adr/0006-grafana-provisioned-from-files.md)).
 
 ## The message
 
@@ -114,7 +126,7 @@ The consumer stops at startup, naming the key, when a required setting is missin
 
 ## The dashboard
 
-`grafana/provisioning/dashboards/docker-stats.json`: six time-series panels (CPU percent,
+`grafana/provisioning/dashboards/docker-stats.json`: time-series panels (CPU percent,
 process count, memory percent, memory bytes, network rate, block I/O rate), the last 15 minutes,
 refreshed every 5 seconds. The Host variable lists the values of the `instance` tag and filters
 every panel; it allows several hosts and All.

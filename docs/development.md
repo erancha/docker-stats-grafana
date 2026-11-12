@@ -3,6 +3,9 @@
 How to run, test and debug the stack, behind the Getting started section of the
 [README](../README.md). The design is in [architecture.md](architecture.md).
 
+**Contents:** [Local setup](#local-setup) · [Scripts](#scripts) · [Tests](#tests) ·
+[A remote broker](#a-remote-broker) · [Gotchas](#gotchas) · [Troubleshooting](#troubleshooting)
+
 ## Local setup
 
 Requires Docker with the Compose plugin (2.20 or newer), `jq`, `curl`, `openssl`, and Python
